@@ -8,77 +8,143 @@
         </a>
     </div>
     <div class="sidebar-menu">
+
+        {{-- ============================================
+             MENU UTAMA (semua role)
+        ============================================ --}}
+        @can('dashboard.view')
         <span class="menu-label">Menu Utama</span>
-        <a href="{{ route('dashboard') }}" class="sidebar-link nav-dash {{ Request::routeIs('dashboard') ? 'active' : '' }}">
+        <a href="{{ route('dashboard') }}" class="sidebar-link {{ Request::routeIs('dashboard') ? 'active' : '' }}">
             <i class="bi bi-grid-1x2-fill"></i>
             <span>Dashboard</span>
         </a>
-        
+        @endcan
+
+        {{-- ============================================
+             MANAJEMEN GUDANG (Owner, Admin, Staff Gudang)
+        ============================================ --}}
+        @canany(['warehouse.view', 'category.view', 'product.view', 'inventory.view'])
         <span class="menu-label">Manajemen Gudang</span>
-        <a href="{{ route('warehouse.index') }}" class="sidebar-link nav-wh {{ Request::routeIs('warehouse.index') ? 'active' : '' }}">
+        @endcanany
+
+        @can('warehouse.view')
+        <a href="{{ route('warehouse.index') }}" class="sidebar-link {{ Request::routeIs('warehouse.*') ? 'active' : '' }}">
             <i class="bi bi-house-gear-fill"></i>
             <span>Gudang</span>
         </a>
-        <a href="{{ route('category.index') }}" class="sidebar-link nav-cat {{ Request::routeIs('category.index') ? 'active' : '' }}">
+        @endcan
+
+        @can('category.view')
+        <a href="{{ route('category.index') }}" class="sidebar-link {{ Request::routeIs('category.*') ? 'active' : '' }}">
             <i class="bi bi-tags-fill"></i>
             <span>Kategori Produk</span>
         </a>
-        <a href="{{ route('product.index') }}" class="sidebar-link nav-prd {{ Request::routeIs('product.index') ? 'active' : '' }}">
+        @endcan
+
+        @can('product.view')
+        <a href="{{ route('product.index') }}" class="sidebar-link {{ Request::routeIs('product.*') ? 'active' : '' }}">
             <i class="bi bi-boxes"></i>
             <span>Produk / Barang</span>
         </a>
-        <a href="{{ route('inventory.index') }}" class="sidebar-link nav-stk {{ Request::routeIs('inventory.index') ? 'active' : '' }}">
+        @endcan
+
+        @can('inventory.view')
+        <a href="{{ route('inventory.index') }}" class="sidebar-link {{ Request::routeIs('inventory.index') ? 'active' : '' }}">
             <i class="bi bi-stack"></i>
             <span>Stok & Mutasi</span>
         </a>
-        <a href="{{ route('warehouse.validation') }}" class="sidebar-link nav-val {{ Request::routeIs('warehouse.validation') ? 'active' : '' }}">
+        @endcan
+
+        {{-- QC & Loading: Staff Gudang + Owner + Admin --}}
+        @hasanyrole(['Owner', 'Admin', 'Staff Gudang'])
+        <a href="{{ route('warehouse.validation') }}" class="sidebar-link {{ Request::routeIs('warehouse.validation') ? 'active' : '' }}">
             <i class="bi bi-patch-check-fill"></i>
             <span>Validasi QC</span>
         </a>
-        <a href="{{ route('warehouse.loading') }}" class="sidebar-link nav-load {{ Request::routeIs('warehouse.loading') ? 'active' : '' }}">
+        <a href="{{ route('warehouse.loading') }}" class="sidebar-link {{ Request::routeIs('warehouse.loading') ? 'active' : '' }}">
             <i class="bi bi-box-arrow-up"></i>
             <span>Loading Barang</span>
         </a>
-        
+        @endhasanyrole
+
+        {{-- ============================================
+             DISTRIBUSI & LOGISTIK (Owner, Admin, Driver)
+        ============================================ --}}
+        @canany(['delivery.view', 'driver.view', 'gps.view'])
         <span class="menu-label">Distribusi & Logistik</span>
-        <a href="{{ route('delivery.index') }}" class="sidebar-link nav-do {{ Request::routeIs('delivery.index') || Request::routeIs('delivery.detail') || Request::routeIs('delivery.surat-jalan') ? 'active' : '' }}">
+        @endcanany
+
+        @can('delivery.view')
+        <a href="{{ route('delivery.index') }}" class="sidebar-link {{ Request::routeIs('delivery.index') ? 'active' : '' }}">
             <i class="bi bi-truck-flatbed"></i>
             <span>Delivery Order</span>
         </a>
-        <a href="{{ route('delivery.assign-driver') }}" class="sidebar-link nav-asg {{ Request::routeIs('delivery.assign-driver') ? 'active' : '' }}">
+        @endcan
+
+        @canany(['delivery.approve', 'delivery.create'])
+        <a href="{{ route('delivery.assign-driver') }}" class="sidebar-link {{ Request::routeIs('delivery.assign-driver') ? 'active' : '' }}">
             <i class="bi bi-person-plus-fill"></i>
             <span>Assign Driver</span>
         </a>
-        <a href="{{ route('delivery.monitoring') }}" class="sidebar-link nav-mon {{ Request::routeIs('delivery.monitoring') ? 'active' : '' }}">
+        <a href="{{ route('delivery.monitoring') }}" class="sidebar-link {{ Request::routeIs('delivery.monitoring') ? 'active' : '' }}">
             <i class="bi bi-speedometer2"></i>
             <span>Monitoring Kiriman</span>
         </a>
-        <a href="{{ route('driver.index') }}" class="sidebar-link nav-drv {{ Request::routeIs('driver.index') || Request::routeIs('vehicle.index') ? 'active' : '' }}">
+        @endcanany
+
+        @can('driver.view')
+        <a href="{{ route('driver.index') }}" class="sidebar-link {{ Request::routeIs('driver.index') ? 'active' : '' }}">
             <i class="bi bi-person-badge-fill"></i>
             <span>Driver & Armada</span>
         </a>
-        <a href="{{ route('pod.index') }}" class="sidebar-link nav-pod {{ Request::routeIs('pod.index') ? 'active' : '' }}">
+        @endcan
+
+        @hasrole('Driver')
+        <a href="{{ route('pod.index') }}" class="sidebar-link {{ Request::routeIs('pod.index') ? 'active' : '' }}">
             <i class="bi bi-card-checklist"></i>
             <span>Proof of Delivery</span>
         </a>
-        <a href="{{ route('tracking.index') }}" class="sidebar-link nav-gps {{ Request::routeIs('tracking.index') ? 'active' : '' }}">
+        @endhasrole
+
+        @can('gps.view')
+        <a href="{{ route('tracking.index') }}" class="sidebar-link {{ Request::routeIs('tracking.index') ? 'active' : '' }}">
             <i class="bi bi-geo-alt-fill"></i>
             <span>Pelacakan GPS</span>
         </a>
-        <a href="{{ route('delivery.incident') }}" class="sidebar-link nav-inc {{ Request::routeIs('delivery.incident') ? 'active' : '' }}">
+        @endcan
+
+        @hasanyrole(['Owner', 'Admin'])
+        <a href="{{ route('delivery.incident') }}" class="sidebar-link {{ Request::routeIs('delivery.incident') ? 'active' : '' }}">
             <i class="bi bi-exclamation-triangle-fill"></i>
             <span>Laporan Insiden</span>
         </a>
+        @endhasanyrole
 
+        {{-- ============================================
+             SISTEM (Owner only)
+        ============================================ --}}
+        @can('user.view')
         <span class="menu-label">Sistem</span>
-        <a href="{{ route('dashboard.users') }}" class="sidebar-link nav-usr {{ Request::routeIs('dashboard.users') ? 'active' : '' }}">
+        <a href="{{ route('users.index') }}" class="sidebar-link {{ Request::routeIs('users.*') ? 'active' : '' }}">
             <i class="bi bi-people-fill"></i>
             <span>Manajemen User</span>
         </a>
-        <a href="{{ route('audit.index') }}" class="sidebar-link nav-aud {{ Request::routeIs('audit.index') ? 'active' : '' }}">
+        <a href="{{ route('roles.index') }}" class="sidebar-link {{ Request::routeIs('roles.*') ? 'active' : '' }}">
+            <i class="bi bi-shield-lock-fill"></i>
+            <span>Manajemen Role</span>
+        </a>
+        @endcan
+
+        @can('audit.view')
+        @cannot('user.view')
+        <span class="menu-label">Sistem</span>
+        @endcannot
+        <a href="{{ route('audit.index') }}" class="sidebar-link {{ Request::routeIs('audit.index') ? 'active' : '' }}">
             <i class="bi bi-clock-history"></i>
             <span>Audit Log</span>
         </a>
+        @endcan
+
     </div>
     <div class="sidebar-footer">
         <div class="sidebar-user">
@@ -87,7 +153,9 @@
                  alt="{{ Auth::user()->name }}">
             <div class="sidebar-user-info">
                 <div class="sidebar-user-name" id="sidebar-user-name">{{ Auth::user()->name }}</div>
-                <div class="sidebar-user-role" id="sidebar-user-role" style="font-size: 0.7rem; opacity: 0.7;">{{ Auth::user()->email }}</div>
+                <div class="sidebar-user-role" id="sidebar-user-role" style="font-size: 0.7rem; opacity: 0.7;">
+                    {{ Auth::user()->roles->first()?->name ?? Auth::user()->email }}
+                </div>
             </div>
             <form method="POST" action="{{ route('logout') }}" id="sidebar-logout-form">
                 @csrf
@@ -102,4 +170,3 @@
         </div>
     </div>
 </aside>
-
