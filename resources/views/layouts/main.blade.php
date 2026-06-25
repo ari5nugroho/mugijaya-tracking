@@ -55,12 +55,21 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // 1. Session check & User data mapping
-            const activeUser = JSON.parse(sessionStorage.getItem('erp_user'));
-            if (!activeUser) {
-                // If not logged in, redirect to login
+            @auth
+                let activeUser = JSON.parse(sessionStorage.getItem('erp_user'));
+                if (!activeUser) {
+                    activeUser = {
+                        name: "{{ Auth::user()->name }}",
+                        email: "{{ Auth::user()->email }}",
+                        role: "Super Admin",
+                        avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80"
+                    };
+                    sessionStorage.setItem('erp_user', JSON.stringify(activeUser));
+                }
+            @else
                 window.location.href = "{{ route('login') }}";
                 return;
-            }
+            @endauth
 
             // Bind user details to Sidebar
             const avatarEl = document.getElementById('sidebar-user-avatar');

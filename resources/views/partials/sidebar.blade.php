@@ -19,6 +19,10 @@
             <i class="bi bi-house-gear-fill"></i>
             <span>Gudang</span>
         </a>
+        <a href="{{ route('category.index') }}" class="sidebar-link nav-cat {{ Request::routeIs('category.index') ? 'active' : '' }}">
+            <i class="bi bi-tags-fill"></i>
+            <span>Kategori Produk</span>
+        </a>
         <a href="{{ route('product.index') }}" class="sidebar-link nav-prd {{ Request::routeIs('product.index') ? 'active' : '' }}">
             <i class="bi bi-boxes"></i>
             <span>Produk / Barang</span>
