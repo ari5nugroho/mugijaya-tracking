@@ -11,7 +11,7 @@
 <!-- Welcome Banner -->
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-        <h4 class="fw-bold mb-1" id="welcome-title">Selamat Datang, Admin!</h4>
+        <h4 class="fw-bold mb-1" id="welcome-title">Selamat Datang, {{ Auth::user()->name }}!</h4>
         <p class="text-muted text-sm m-0">Ringkasan aktivitas operasional pergudangan dan distribusi CV Mugijaya.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
@@ -151,11 +151,6 @@
 @section('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const user = JSON.parse(sessionStorage.getItem('erp_user'));
-        if (user) {
-            document.getElementById('welcome-title').innerText = `Selamat Datang, ${user.name}!`;
-        }
-
         // Set current date
         const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date-badge').innerText = new Date().toLocaleDateString('id-ID', dateOptions);

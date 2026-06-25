@@ -82,14 +82,24 @@
     </div>
     <div class="sidebar-footer">
         <div class="sidebar-user">
-            <img id="sidebar-user-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" alt="User Avatar">
+            <img id="sidebar-user-avatar"
+                 src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=4B6EF5&color=fff&size=80&rounded=true"
+                 alt="{{ Auth::user()->name }}">
             <div class="sidebar-user-info">
-                <div class="sidebar-user-name" id="sidebar-user-name">Loading...</div>
-                <div class="sidebar-user-role" id="sidebar-user-role">Loading...</div>
+                <div class="sidebar-user-name" id="sidebar-user-name">{{ Auth::user()->name }}</div>
+                <div class="sidebar-user-role" id="sidebar-user-role" style="font-size: 0.7rem; opacity: 0.7;">{{ Auth::user()->email }}</div>
             </div>
-            <div class="sidebar-logout" id="btn-logout" title="Keluar">
+            <form method="POST" action="{{ route('logout') }}" id="sidebar-logout-form">
+                @csrf
+            </form>
+            <div class="sidebar-logout"
+                 id="btn-logout"
+                 title="Keluar dari Sistem"
+                 onclick="document.getElementById('sidebar-logout-form').submit()"
+                 style="cursor: pointer;">
                 <i class="bi bi-box-arrow-right"></i>
             </div>
         </div>
     </div>
 </aside>
+

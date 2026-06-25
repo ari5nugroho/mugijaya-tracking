@@ -16,4 +16,9 @@ class Warehouse extends Model
         'manager',
         'capacity_used',
     ];
+
+    public function stocks()
+    {
+        return $this->hasMany(Stock::class);
+    }
 }

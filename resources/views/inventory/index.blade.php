@@ -2,12 +2,36 @@
 
 @section('title', 'Stok & Mutasi - CV Mugijaya Logistics ERP')
 
-@section('styles')
-<!-- DataTables BS5 CSS -->
-<link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-@endsection
-
 @section('content')
+<!-- Success Alert -->
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert" style="background-color: rgba(22, 163, 74, 0.2); color: #4ade80;">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-check-circle-fill"></i>
+            <div>{{ session('success') }}</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="filter: invert(1);"></button>
+    </div>
+@endif
+
+<!-- Validation Errors -->
+@if($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert" style="background-color: rgba(220, 38, 38, 0.2); color: #f87171;">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>
+                <strong class="d-block mb-1">Terjadi Kesalahan Validasi:</strong>
+                <ul class="mb-0 text-sm ps-3">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="filter: invert(1);"></button>
+    </div>
+@endif
+
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
         <h4 class="fw-bold mb-1">Stok & Mutasi Barang</h4>
@@ -24,13 +48,28 @@
         <div class="erp-card p-4">
             <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                 <h6 class="fw-bold m-0"><i class="bi bi-box-fill text-indigo me-2"></i>Status Persediaan Real-time</h6>
-                <div style="min-width: 200px;">
-                    <select class="form-select form-select-sm" id="wh-filter" onchange="renderStocksTable()">
-                        <option value="all">Semua Gudang</option>
-                        <!-- Populated dynamically -->
-                    </select>
-                </div>
+                
+                <!-- Filter form -->
+                <form action="{{ route('inventory.index') }}" method="GET" class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap" id="filter-search-form">
+                    <div style="min-width: 180px;">
+                        <select class="form-select form-select-sm bg-light-dark border-light-dark text-white text-xs" name="warehouse_id" onchange="this.form.submit()">
+                            <option value="all">Semua Gudang</option>
+                            @foreach($warehouses as $wh)
+                                <option value="{{ $wh->id }}" {{ request('warehouse_id') == $wh->id ? 'selected' : '' }}>{{ $wh->code }} - {{ $wh->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="input-group input-group-sm" style="max-width: 250px;">
+                        <span class="input-group-text bg-light-dark border-light-dark text-muted py-1.5"><i class="bi bi-search text-xs"></i></span>
+                        <input type="text" name="search" class="form-control bg-light-dark border-light-dark text-white text-xs" placeholder="Cari SKU/Nama..." value="{{ request('search') }}">
+                        @if(request('search') || (request('warehouse_id') && request('warehouse_id') !== 'all'))
+                            <a href="{{ route('inventory.index') }}" class="btn btn-outline-secondary border-light-dark bg-light-dark d-flex align-items-center"><i class="bi bi-x-lg text-xs"></i></a>
+                        @endif
+                    </div>
+                    <button type="submit" class="btn btn-primary-gradient btn-sm px-3 text-xs">Cari</button>
+                </form>
             </div>
+            
             <div class="table-responsive">
                 <table id="stocks-table" class="table align-middle" style="width:100%">
                     <thead>
@@ -45,9 +84,40 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Loaded dynamically -->
+                        @forelse($stocks as $s)
+                            @php
+                                $isLow = $s->quantity <= $s->minimum_stock;
+                                $badgeClass = $isLow ? 'bg-danger text-danger bg-opacity-10 border border-danger border-opacity-30' : 'bg-success text-success bg-opacity-10 border border-success border-opacity-30';
+                                $statusStr = $isLow ? 'Low Stock' : 'Aman';
+                            @endphp
+                            <tr>
+                                <td class="fw-bold text-indigo">{{ $s->product->sku }}</td>
+                                <td class="fw-semibold text-primary">
+                                    {{ $s->product->name }}
+                                </td>
+                                <td class="text-xs">{{ $s->warehouse->code }} - {{ $s->warehouse->name }}</td>
+                                <td class="fw-bold">{{ $s->quantity }} {{ $s->product->unit }}</td>
+                                <td>{{ $s->minimum_stock }} {{ $s->product->unit }}</td>
+                                <td><span class="badge {{ $badgeClass }} text-xs">{{ $statusStr }}</span></td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-warning" onclick="openMinStockModal({{ json_encode($s) }})" title="Atur Limit"><i class="bi bi-sliders"></i> Adjust Limit</button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-5">
+                                    <i class="bi bi-box2-fill text-muted mb-2 d-block fs-3"></i>
+                                    Tidak ada stok barang ditemukan.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- Pagination links -->
+            <div class="d-flex justify-content-center mt-3">
+                {{ $stocks->links() }}
             </div>
         </div>
     </div>
@@ -57,14 +127,50 @@
         <div class="erp-card p-4 mb-4 border border-danger border-opacity-20 bg-danger bg-opacity-5">
             <h6 class="fw-bold text-danger mb-3"><i class="bi bi-exclamation-octagon-fill me-2"></i>Peringatan Restock</h6>
             <div class="d-flex flex-column gap-2.5" id="low-stocks-list">
-                <!-- Populated dynamically -->
+                @forelse($lowStocks as $ls)
+                    <div class="d-flex align-items-center justify-content-between border-bottom border-danger border-opacity-10 pb-2 last-no-border">
+                        <div>
+                            <div class="text-xs fw-bold text-primary">{{ $ls->product->name }}</div>
+                            <div class="text-xs text-muted">{{ $ls->warehouse->name }}</div>
+                        </div>
+                        <span class="badge bg-danger text-xs py-1">{{ $ls->quantity }} / {{ $ls->minimum_stock }} {{ $ls->product->unit }}</span>
+                    </div>
+                @empty
+                    <div class="text-xs text-muted py-2 text-center">Seluruh stok aman.</div>
+                @endforelse
             </div>
         </div>
 
         <div class="erp-card p-4">
             <h6 class="fw-bold mb-3"><i class="bi bi-clock-history text-indigo me-2"></i>Log Mutasi Terakhir</h6>
             <div class="d-flex flex-column gap-3" id="mutation-logs">
-                <!-- Populated dynamically -->
+                @forelse($recentMovements as $rm)
+                    @php
+                        $badgeColor = 'text-success bg-success bg-opacity-10 border border-success border-opacity-20';
+                        if ($rm->type === 'OUT' || $rm->quantity_change < 0) {
+                            $badgeColor = 'text-danger bg-danger bg-opacity-10 border border-danger border-opacity-20';
+                        } elseif ($rm->type === 'TRANSFER') {
+                            $badgeColor = 'text-info bg-info bg-opacity-10 border border-info border-opacity-20';
+                        } elseif ($rm->type === 'ADJUSTMENT') {
+                            $badgeColor = 'text-warning bg-warning bg-opacity-10 border border-warning border-opacity-20';
+                        }
+                    @endphp
+                    <div class="d-flex align-items-start gap-2 border-bottom border-light-dark pb-2 last-no-border">
+                        <span class="badge {{ $badgeColor }} text-xs fw-bold" style="min-width: 65px; text-align: center;">{{ $rm->type }}</span>
+                        <div class="min-w-0 flex-grow-1">
+                            <p class="text-xs text-primary mb-0.5 fw-semibold" style="white-space: normal; line-height: 1.4;">
+                                <strong>{{ $rm->product->sku }}</strong>: {{ $rm->quantity_change > 0 ? '+' : '' }}{{ $rm->quantity_change }} {{ $rm->product->unit }} di {{ $rm->warehouse->name }}.
+                                <span class="text-secondary d-block text-xxs mt-0.5">{{ $rm->notes }}</span>
+                            </p>
+                            <div class="d-flex justify-content-between text-xxs text-muted mt-1">
+                                <span>Oleh: {{ $rm->user ? $rm->user->name : 'System' }}</span>
+                                <span>{{ $rm->created_at->format('H:i') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="text-xs text-muted py-2 text-center">Belum ada mutasi stok.</div>
+                @endforelse
             </div>
         </div>
     </div>
@@ -79,34 +185,68 @@
                 <h5 class="modal-title fw-bold"><i class="bi bi-arrow-left-right text-indigo me-2"></i>Input Mutasi Stok</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="adjust-stock-form">
+            <form id="adjust-stock-form" action="{{ route('inventory.mutate') }}" method="POST">
+                @csrf
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="adj-product" class="form-label">Pilih Produk (SKU)</label>
-                        <select class="form-select" id="adj-product" required>
-                            <!-- Populated dynamically -->
+                        <label for="adj-product" class="form-label">Pilih Produk</label>
+                        <select class="form-select" id="adj-product" name="product_id" required>
+                            @foreach($products as $p)
+                                <option value="{{ $p->id }}" {{ old('product_id') == $p->id ? 'selected' : '' }}>{{ $p->sku }} - {{ $p->name }}</option>
+                            @endforeach
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="adj-warehouse" class="form-label">Gudang Tujuan</label>
-                        <select class="form-select" id="adj-warehouse" required>
-                            <!-- Populated dynamically -->
-                        </select>
-                    </div>
+                    
                     <div class="mb-3">
                         <label for="adj-type" class="form-label">Tipe Penyesuaian</label>
-                        <select class="form-select" id="adj-type" required>
-                            <option value="IN">Stock In (Barang Masuk)</option>
-                            <option value="OUT">Stock Out (Barang Keluar)</option>
+                        <select class="form-select" id="adj-type" name="type" required onchange="toggleTransferFields()">
+                            <option value="IN" {{ old('type') == 'IN' ? 'selected' : '' }}>Stock In (Barang Masuk)</option>
+                            <option value="OUT" {{ old('type') == 'OUT' ? 'selected' : '' }}>Stock Out (Barang Keluar)</option>
+                            <option value="ADJUSTMENT" {{ old('type') == 'ADJUSTMENT' ? 'selected' : '' }}>Stock Adjustment (Koreksi/Set Stok)</option>
+                            <option value="TRANSFER" {{ old('type') == 'TRANSFER' ? 'selected' : '' }}>Transfer Stock (Mutasi Antar Gudang)</option>
                         </select>
                     </div>
+
+                    <!-- Single Warehouse selection (default) -->
+                    <div id="single-warehouse-group" class="mb-3">
+                        <label for="adj-warehouse" class="form-label">Gudang</label>
+                        <select class="form-select" id="adj-warehouse" name="warehouse_id">
+                            @foreach($warehouses as $wh)
+                                <option value="{{ $wh->id }}" {{ old('warehouse_id') == $wh->id ? 'selected' : '' }}>{{ $wh->code }} - {{ $wh->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Double Warehouse selection (Transfer only) -->
+                    <div id="transfer-warehouse-group" class="mb-3 d-none">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label for="adj-source-warehouse" class="form-label">Gudang Asal</label>
+                                <select class="form-select" id="adj-source-warehouse" name="source_warehouse_id">
+                                    @foreach($warehouses as $wh)
+                                        <option value="{{ $wh->id }}" {{ old('source_warehouse_id') == $wh->id ? 'selected' : '' }}>{{ $wh->code }} - {{ $wh->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="adj-dest-warehouse" class="form-label">Gudang Tujuan</label>
+                                <select class="form-select" id="adj-dest-warehouse" name="destination_warehouse_id">
+                                    @foreach($warehouses as $wh)
+                                        <option value="{{ $wh->id }}" {{ old('destination_warehouse_id') == $wh->id ? 'selected' : '' }}>{{ $wh->code }} - {{ $wh->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label for="adj-quantity" class="form-label">Jumlah (Pcs/Unit)</label>
-                        <input type="number" class="form-control" id="adj-quantity" required min="1" placeholder="Contoh: 50">
+                        <input type="number" class="form-control" id="adj-quantity" name="quantity" required min="1" placeholder="Contoh: 50" value="{{ old('quantity') }}">
                     </div>
+                    
                     <div class="mb-3">
                         <label for="adj-notes" class="form-label">Keterangan / Alasan</label>
-                        <input type="text" class="form-control" id="adj-notes" placeholder="Contoh: Restock Supplier PT ABC" required>
+                        <input type="text" class="form-control" id="adj-notes" name="notes" placeholder="Contoh: Restock Supplier PT ABC" required value="{{ old('notes') }}">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -126,16 +266,18 @@
                 <h5 class="modal-title fw-bold"><i class="bi bi-sliders text-indigo me-2"></i>Batas Pengingat Stok</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="edit-min-stock-form">
+            <form id="edit-min-stock-form" method="POST">
+                @csrf
+                @method('PUT')
                 <input type="hidden" id="edit-min-id">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label d-block text-muted">Produk</label>
-                        <div class="fw-bold" id="edit-min-prod-name">SMART TV LED</div>
+                        <label class="form-label d-block text-muted">Produk & Gudang</label>
+                        <div class="fw-bold text-primary" id="edit-min-prod-name">SMART TV LED</div>
                     </div>
                     <div class="mb-3">
                         <label for="edit-min-val" class="form-label">Jumlah Stok Minimum</label>
-                        <input type="number" class="form-control" id="edit-min-val" required min="0">
+                        <input type="number" class="form-control" id="edit-min-val" name="minimum_stock" required min="0">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -149,281 +291,68 @@
 @endsection
 
 @section('scripts')
-<!-- jQuery (needed for DataTables) -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<!-- DataTables JS -->
-<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-
 <script>
-    let table;
+    // Toggle transfer field groups conditionally based on adjustment type selected
+    function toggleTransferFields() {
+        const type = document.getElementById('adj-type').value;
+        const singleGroup = document.getElementById('single-warehouse-group');
+        const transferGroup = document.getElementById('transfer-warehouse-group');
+        const qtyLabel = document.querySelector('label[for="adj-quantity"]');
 
-    function renderStocksTable() {
-        const stocks = db.getData('stocks');
-        const warehouses = db.getData('warehouses');
-        const products = db.getData('products');
-        const filterWh = document.getElementById('wh-filter').value;
-        
-        if ($.fn.DataTable.isDataTable('#stocks-table')) {
-            table.destroy();
-        }
-
-        const tbody = document.querySelector('#stocks-table tbody');
-        tbody.innerHTML = '';
-
-        let filteredStocks = stocks;
-        if (filterWh !== 'all') {
-            filteredStocks = stocks.filter(s => s.warehouseId === parseInt(filterWh));
-        }
-
-        filteredStocks.forEach(s => {
-            const prod = products.find(p => p.sku === s.sku);
-            const wh = warehouses.find(w => w.id === s.warehouseId);
-            
-            if (!prod || !wh) return; // skip orphans
-
-            const isLow = s.stockCurrent <= s.stockMin;
-            const badgeClass = isLow ? 'bg-danger text-danger bg-opacity-10 border border-danger border-opacity-30' : 'bg-success text-success bg-opacity-10 border border-success border-opacity-30';
-            const statusStr = isLow ? 'Low Stock' : 'Aman';
-
-            tbody.innerHTML += `
-                <tr>
-                    <td class="fw-bold text-indigo">${s.sku}</td>
-                    <td class="fw-semibold text-primary">${prod.name}</td>
-                    <td class="text-xs">${wh.code} - ${wh.name}</td>
-                    <td class="fw-bold">${s.stockCurrent} ${prod.unit}</td>
-                    <td>${s.stockMin} ${prod.unit}</td>
-                    <td><span class="badge ${badgeClass} text-xs">${statusStr}</span></td>
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-outline-warning" onclick="openMinStockModal(${s.id})" title="Atur Limit"><i class="bi bi-sliders"></i> Adjust Limit</button>
-                    </td>
-                </tr>
-            `;
-        });
-
-        table = $('#stocks-table').DataTable({
-            responsive: true,
-            language: {
-                search: "Cari SKU/Nama:",
-                lengthMenu: "Tampil _MENU_",
-                info: "_START_ - _END_ dari _TOTAL_",
-                paginate: {
-                    next: "<i class='bi bi-chevron-right'></i>",
-                    previous: "<i class='bi bi-chevron-left'></i>"
-                }
-            }
-        });
-    }
-
-    function renderSidePanels() {
-        const stocks = db.getData('stocks');
-        const warehouses = db.getData('warehouses');
-        const products = db.getData('products');
-        const logs = db.getData('auditLogs');
-
-        // 1. Low stock panel
-        const lowList = document.getElementById('low-stocks-list');
-        lowList.innerHTML = '';
-        
-        let lowCount = 0;
-        stocks.forEach(s => {
-            const prod = products.find(p => p.sku === s.sku);
-            const wh = warehouses.find(w => w.id === s.warehouseId);
-            if (prod && wh && s.stockCurrent <= s.stockMin) {
-                lowCount++;
-                lowList.innerHTML += `
-                    <div class="d-flex align-items-center justify-content-between border-bottom border-danger border-opacity-10 pb-2 last-no-border">
-                        <div>
-                            <div class="text-xs fw-bold text-primary">${prod.name}</div>
-                            <div class="text-xs text-muted">${wh.name}</div>
-                        </div>
-                        <span class="badge bg-danger">${s.stockCurrent} / ${s.stockMin} ${prod.unit}</span>
-                    </div>
-                `;
-            }
-        });
-
-        if (lowCount === 0) {
-            lowList.innerHTML = '<div class="text-xs text-muted py-2 text-center">Seluruh stok aman.</div>';
-        }
-
-        // 2. Mutation logs panel (filter logs containing "Stock")
-        const mutationList = document.getElementById('mutation-logs');
-        mutationList.innerHTML = '';
-
-        const stockLogs = logs.filter(l => l.action.toLowerCase().includes('stock') || l.type.toLowerCase().includes('in') || l.type.toLowerCase().includes('out')).slice(0, 5);
-        
-        stockLogs.forEach(l => {
-            let badgeColor = 'text-success bg-success bg-opacity-10';
-            if (l.type.toLowerCase().includes('out') || l.type.toLowerCase().includes('delete')) {
-                badgeColor = 'text-danger bg-danger bg-opacity-10';
-            }
-            const timeStr = new Date(l.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-
-            mutationList.innerHTML += `
-                <div class="d-flex align-items-start gap-2 border-bottom border-light-dark pb-2 last-no-border">
-                    <span class="badge ${badgeColor} text-xs fw-bold">${l.type}</span>
-                    <div class="min-w-0 flex-grow-1">
-                        <p class="text-xs text-primary mb-0.5 fw-semibold">${l.details}</p>
-                        <div class="d-flex justify-content-between text-xs text-muted">
-                            <span>Oleh: ${l.user}</span>
-                            <span>${timeStr}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-
-        if (stockLogs.length === 0) {
-            mutationList.innerHTML = '<div class="text-xs text-muted py-2 text-center">Belum ada mutasi stok.</div>';
+        if (type === 'TRANSFER') {
+            singleGroup.classList.add('d-none');
+            transferGroup.classList.remove('d-none');
+            qtyLabel.innerText = "Jumlah Transfer (Pcs/Unit)";
+        } else if (type === 'ADJUSTMENT') {
+            singleGroup.classList.remove('d-none');
+            transferGroup.classList.add('d-none');
+            qtyLabel.innerText = "Jumlah Koreksi Baru (Pcs/Unit)";
+        } else {
+            singleGroup.classList.remove('d-none');
+            transferGroup.classList.add('d-none');
+            qtyLabel.innerText = "Jumlah (Pcs/Unit)";
         }
     }
 
-    // Setup drop-down options for mutasi
-    function populateSelectors() {
-        const products = db.getData('products');
-        const warehouses = db.getData('warehouses');
+    // Open edit minimum stock modal
+    function openMinStockModal(stock) {
+        if (stock) {
+            document.getElementById('edit-min-id').value = stock.id;
+            document.getElementById('edit-min-prod-name').innerText = `${stock.product.sku} - ${stock.product.name} (${stock.warehouse.name})`;
+            document.getElementById('edit-min-val').value = stock.minimum_stock;
 
-        const pSel = document.getElementById('adj-product');
-        pSel.innerHTML = '';
-        products.forEach(p => {
-            pSel.innerHTML += `<option value="${p.sku}">${p.sku} - ${p.name}</option>`;
-        });
-
-        const wSel = document.getElementById('adj-warehouse');
-        wSel.innerHTML = '';
-        warehouses.forEach(w => {
-            wSel.innerHTML += `<option value="${w.id}">${w.code} - ${w.name}</option>`;
-        });
-    }
-
-    // Open adjustment limit modal
-    function openMinStockModal(stockId) {
-        const stocks = db.getData('stocks');
-        const products = db.getData('products');
-        const s = stocks.find(st => st.id === stockId);
-        if (s) {
-            const prod = products.find(p => p.sku === s.sku);
-            document.getElementById('edit-min-id').value = s.id;
-            document.getElementById('edit-min-prod-name').innerText = prod ? `${prod.sku} - ${prod.name}` : s.sku;
-            document.getElementById('edit-min-val').value = s.stockMin;
+            // Dynamically set action URL
+            const form = document.getElementById('edit-min-stock-form');
+            form.action = `/inventory/${stock.id}`;
 
             const modal = new bootstrap.Modal(document.getElementById('editMinStockModal'));
             modal.show();
         }
     }
 
-    // Edit min stock submit handler
-    document.getElementById('edit-min-stock-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const id = document.getElementById('edit-min-id').value;
-        const minVal = parseInt(document.getElementById('edit-min-val').value);
-
-        const stocks = db.getData('stocks');
-        const index = stocks.findIndex(s => s.id === parseInt(id));
-        if (index !== -1) {
-            stocks[index].stockMin = minVal;
-            db.setData('stocks', stocks);
-
-            // Log audit
-            const activeUser = JSON.parse(sessionStorage.getItem('erp_user'));
-            db.logAction(activeUser.name, "Stock Adjustment", "Adjust Limit", `Mengubah batas stok minimum ${stocks[index].sku} menjadi ${minVal}`, "Success");
-
-            bootstrap.Modal.getInstance(document.getElementById('editMinStockModal')).hide();
-            renderStocksTable();
-            renderSidePanels();
-        }
-    });
-
-    // Mutasi stok submit handler
-    document.getElementById('adjust-stock-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const sku = document.getElementById('adj-product').value;
-        const whId = parseInt(document.getElementById('adj-warehouse').value);
-        const type = document.getElementById('adj-type').value;
-        const qty = parseInt(document.getElementById('adj-quantity').value);
-        const notes = document.getElementById('adj-notes').value.trim();
-
-        const stocks = db.getData('stocks');
-        const warehouses = db.getData('warehouses');
-        const wh = warehouses.find(w => w.id === whId);
-
-        // Find stock card
-        let stockCard = stocks.find(s => s.sku === sku && s.warehouseId === whId);
-        
-        if (!stockCard) {
-            // Create stock card if it doesn't exist
-            stockCard = {
-                id: stocks.length > 0 ? Math.max(...stocks.map(s => s.id)) + 1 : 1,
-                sku: sku,
-                warehouseId: whId,
-                stockCurrent: 0,
-                stockMin: 10
-            };
-            stocks.push(stockCard);
-        }
-
-        const oldStock = stockCard.stockCurrent;
-        let newStock = oldStock;
-
-        if (type === 'IN') {
-            newStock += qty;
-        } else {
-            if (oldStock < qty) {
-                alert(`Stok tidak mencukupi! Stok saat ini di gudang terpilih: ${oldStock}`);
-                return;
-            }
-            newStock -= qty;
-        }
-
-        // Update database stocks
-        stockCard.stockCurrent = newStock;
-        db.setData('stocks', stocks);
-
-        // Add vol weight changes to warehouse capacity used (simplified volumetric capacity simulation)
-        const products = db.getData('products');
-        const prod = products.find(p => p.sku === sku);
-        if (prod && wh) {
-            // Let's assume 1 unit product uses: 0.1 m³
-            const deltaVol = (type === 'IN' ? qty : -qty) * 0.1;
-            let newCapacityUsed = wh.capacityUsed + deltaVol;
-            if (newCapacityUsed < 0) newCapacityUsed = 0;
-            if (newCapacityUsed > wh.capacity) newCapacityUsed = wh.capacity;
-            db.updateItem('warehouses', whId, { capacityUsed: Math.round(newCapacityUsed) });
-        }
-
-        // Log action in audit logs
-        const activeUser = JSON.parse(sessionStorage.getItem('erp_user'));
-        const movementDetails = `Mutasi Stock ${type}: ${qty} Pcs ${sku} di ${wh ? wh.name : 'Gudang'} (${notes})`;
-        db.logAction(activeUser.name, "Stock Mutation", `Stock ${type}`, movementDetails, "Success");
-
-        bootstrap.Modal.getInstance(document.getElementById('adjustStockModal')).hide();
-        document.getElementById('adjust-stock-form').reset();
-        
-        // Re-render
-        renderStocksTable();
-        renderSidePanels();
-    });
-
-    // Initialize elements
     document.addEventListener('DOMContentLoaded', () => {
-        // Populate filter select options
-        const warehouses = db.getData('warehouses');
-        const whFilter = document.getElementById('wh-filter');
-        warehouses.forEach(w => {
-            whFilter.innerHTML += `<option value="${w.id}">${w.code} - ${w.name}</option>`;
-        });
+        // Sync local storage audit logs
+        @if(session('log_action'))
+            const activeUser = JSON.parse(sessionStorage.getItem('erp_user'));
+            if (activeUser && window.db) {
+                db.logAction(
+                    activeUser.name,
+                    "{{ session('log_action.category') }}",
+                    "{{ session('log_action.action') }}",
+                    "{{ session('log_action.details') }}",
+                    "Success"
+                );
+            }
+        @endif
 
-        populateSelectors();
-        renderStocksTable();
-        renderSidePanels();
+        // Trigger toggle fields initially to ensure correct input states
+        toggleTransferFields();
 
-        // Check URL parameters for shortcut action
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('action') === 'adjust') {
-            const modal = new bootstrap.Modal(document.getElementById('adjustStockModal'));
+        // Check if modal needs to be re-opened due to validation failure
+        @if(session('open_modal'))
+            const modal = new bootstrap.Modal(document.getElementById("{{ session('open_modal') }}"));
             modal.show();
-        }
+        @endif
     });
 </script>
 @endsection

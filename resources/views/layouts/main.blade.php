@@ -54,33 +54,7 @@
     <!-- Global Script for Layout and Theme toggling -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Session check & User data mapping
-            @auth
-                let activeUser = JSON.parse(sessionStorage.getItem('erp_user'));
-                if (!activeUser) {
-                    activeUser = {
-                        name: "{{ Auth::user()->name }}",
-                        email: "{{ Auth::user()->email }}",
-                        role: "Super Admin",
-                        avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80"
-                    };
-                    sessionStorage.setItem('erp_user', JSON.stringify(activeUser));
-                }
-            @else
-                window.location.href = "{{ route('login') }}";
-                return;
-            @endauth
-
-            // Bind user details to Sidebar
-            const avatarEl = document.getElementById('sidebar-user-avatar');
-            const nameEl = document.getElementById('sidebar-user-name');
-            const roleEl = document.getElementById('sidebar-user-role');
-            
-            if (avatarEl && activeUser.avatar) avatarEl.src = activeUser.avatar;
-            if (nameEl) nameEl.innerText = activeUser.name;
-            if (roleEl) roleEl.innerText = activeUser.role;
-
-            // 2. Sidebar Mobile Toggle
+            // 1. Sidebar Mobile Toggle
             const toggleBtn = document.getElementById('sidebar-toggle-btn');
             const sidebar = document.querySelector('.sidebar');
             if (toggleBtn && sidebar) {
@@ -130,19 +104,7 @@
                 });
             }
 
-            // 4. Logout handling
-            const logoutBtn = document.getElementById('btn-logout');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', () => {
-                    if (window.db) {
-                        db.logAction(activeUser.name, "User Access", "Logout", `Admin ${activeUser.email} logout dari sistem`, "Success");
-                    }
-                    sessionStorage.removeItem('erp_user');
-                    window.location.href = "{{ route('login') }}";
-                });
-            }
-
-            // 5. Dynamic Notifications Simulation
+            // 4. Dynamic Notifications Simulation
             const notifContainer = document.getElementById('notif-items-container');
             if (notifContainer && window.db) {
                 const rawLogs = localStorage.getItem('erp_auditLogs');
