@@ -20,9 +20,17 @@ class PasswordController extends Controller
             'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
 
-        $request->user()->update([
+        $user = $request->user();
+        $user->update([
             'password' => Hash::make($validated['password']),
         ]);
+
+        activity()
+            ->useLog('auth')
+            ->causedBy($user)
+            ->performedOn($user)
+            ->event('password_change')
+            ->log("User '{$user->name}' memperbarui password");
 
         return back()->with('status', 'password-updated');
     }

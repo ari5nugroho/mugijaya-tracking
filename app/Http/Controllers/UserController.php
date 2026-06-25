@@ -38,9 +38,52 @@ class UserController extends Controller
             'role' => ['required', 'string', 'exists:roles,name'],
         ]);
 
-        $user->syncRoles([$request->input('role')]);
+        $oldRole = $user->roles->first()?->name ?? 'No Role';
+        $newRole = $request->input('role');
+
+        $user->syncRoles([$newRole]);
+
+        activity()
+            ->useLog('user_management')
+            ->performedOn($user)
+            ->event('change_role')
+            ->withProperties([
+                'old_role' => $oldRole,
+                'new_role' => $newRole,
+            ])
+            ->log("Role user '{$user->name}' diubah dari '{$oldRole}' ke '{$newRole}'");
 
         return redirect()->route('users.index')
             ->with('success', "Role user {$user->name} berhasil diubah menjadi {$request->input('role')}.");
+    }
+
+    /**
+     * Toggle the active status of a user.
+     */
+    public function toggleStatus(User $user)
+    {
+        // Don't allow toggling own status
+        if ($user->id === auth()->id()) {
+            return redirect()->route('users.index')
+                ->with('error', 'Anda tidak dapat menonaktifkan akun Anda sendiri.');
+        }
+
+        $user->is_active = !$user->is_active;
+        $user->save();
+
+        $statusStr = $user->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        $event = $user->is_active ? 'activate' : 'deactivate';
+
+        activity()
+            ->useLog('user_management')
+            ->performedOn($user)
+            ->event($event)
+            ->withProperties([
+                'is_active' => $user->is_active
+            ])
+            ->log("User '{$user->name}' telah {$statusStr}");
+
+        return redirect()->route('users.index')
+            ->with('success', "Status user {$user->name} berhasil {$statusStr}.");
     }
 }

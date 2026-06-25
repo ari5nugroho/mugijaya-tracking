@@ -8,6 +8,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\AuditLogController;
 
 // ============================================================
 // Public Routes
@@ -67,6 +68,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:Owner')->group(function () {
         Route::get('/dashboard/users', [UserController::class, 'index'])->name('users.index');
         Route::put('/dashboard/users/{user}/role', [UserController::class, 'updateRole'])->name('users.updateRole');
+        Route::put('/dashboard/users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.toggleStatus');
 
         Route::resource('roles', RoleController::class)->only(['index', 'store', 'update', 'destroy']);
     });
@@ -75,7 +77,7 @@ Route::middleware('auth')->group(function () {
     // Audit Log (Owner only)
     // =========================================================
     Route::middleware('role:Owner')->group(function () {
-        Route::get('/audit', function () { return view('audit.index'); })->name('audit.index');
+        Route::get('/audit', [AuditLogController::class, 'index'])->name('audit.index');
     });
 
     // =========================================================

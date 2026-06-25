@@ -54,6 +54,7 @@
                     <th>Pengguna</th>
                     <th>Email</th>
                     <th>Role Saat Ini</th>
+                    <th>Status</th>
                     <th>Bergabung</th>
                     <th width="120" class="text-center">Aksi</th>
                 </tr>
@@ -94,17 +95,44 @@
                             <span class="text-muted fst-italic text-xs">Belum ada role</span>
                         @endif
                     </td>
+                    <td>
+                        @if($user->is_active ?? true)
+                            <span class="badge bg-success text-success bg-opacity-15 border border-success border-opacity-25 fw-semibold px-2">
+                                <i class="bi bi-check-circle me-1"></i>Aktif
+                            </span>
+                        @else
+                            <span class="badge bg-danger text-danger bg-opacity-15 border border-danger border-opacity-25 fw-semibold px-2">
+                                <i class="bi bi-x-circle me-1"></i>Nonaktif
+                            </span>
+                        @endif
+                    </td>
                     <td class="text-muted text-xs">{{ $user->created_at->format('d M Y') }}</td>
                     <td class="text-center">
-                        <button class="btn btn-sm btn-outline-primary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#assignRoleModal"
-                                data-user-id="{{ $user->id }}"
-                                data-user-name="{{ $user->name }}"
-                                data-user-role="{{ $roleName ?? '' }}"
-                                title="Assign / Ubah Role">
-                            <i class="bi bi-person-gear"></i>
-                        </button>
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#assignRoleModal"
+                                    data-user-id="{{ $user->id }}"
+                                    data-user-name="{{ $user->name }}"
+                                    data-user-role="{{ $roleName ?? '' }}"
+                                    title="Assign / Ubah Role">
+                                <i class="bi bi-person-gear"></i>
+                            </button>
+                            @if($user->id !== auth()->id())
+                            <form method="POST" action="{{ route('users.toggleStatus', $user) }}" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin mengubah status aktif user ini?')">
+                                @csrf
+                                @method('PUT')
+                                <button type="submit" class="btn btn-sm {{ ($user->is_active ?? true) ? 'btn-outline-danger' : 'btn-outline-success' }}"
+                                        title="{{ ($user->is_active ?? true) ? 'Nonaktifkan User' : 'Aktifkan User' }}">
+                                    <i class="bi {{ ($user->is_active ?? true) ? 'bi-person-x' : 'bi-person-check' }}"></i>
+                                </button>
+                            </form>
+                            @else
+                            <button class="btn btn-sm btn-outline-secondary" disabled title="Tidak dapat menonaktifkan akun sendiri">
+                                <i class="bi bi-person-x"></i>
+                            </button>
+                            @endif
+                        </div>
                     </td>
                 </tr>
                 @empty

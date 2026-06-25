@@ -69,9 +69,24 @@ class StockController extends Controller
         }
 
         $stock = Stock::findOrFail($id);
+        $oldMinStock = $stock->minimum_stock;
+        
         $stock->update([
             'minimum_stock' => $request->input('minimum_stock'),
         ]);
+
+        activity()
+            ->useLog('inventory')
+            ->performedOn($stock)
+            ->event('adjustment')
+            ->withProperties([
+                'old' => ['minimum_stock' => $oldMinStock],
+                'attributes' => ['minimum_stock' => $stock->minimum_stock],
+                'product' => $stock->product->name,
+                'sku' => $stock->product->sku,
+                'warehouse' => $stock->warehouse->name
+            ])
+            ->log("Batas stok minimum produk '{$stock->product->name}' ({$stock->product->sku}) di gudang '{$stock->warehouse->name}' diubah dari {$oldMinStock} menjadi {$stock->minimum_stock}");
 
         return redirect()->route('inventory.index')
             ->with('success', 'Batas stok minimum berhasil diperbarui!')
@@ -164,6 +179,34 @@ class StockController extends Controller
                         'created_by' => $userId
                     ]);
 
+                    // Log activity
+                    $sourceWhName = Warehouse::find($sourceWhId)->name;
+                    $destWhName = Warehouse::find($destWhId)->name;
+                    $product = Product::find($productId);
+                    
+                    activity()
+                        ->useLog('inventory')
+                        ->event('transfer')
+                        ->withProperties([
+                            'old' => [
+                                'source_warehouse' => $sourceWhName,
+                                'source_quantity' => $srcQtyBefore,
+                                'destination_warehouse' => $destWhName,
+                                'destination_quantity' => $destQtyBefore,
+                            ],
+                            'attributes' => [
+                                'source_warehouse' => $sourceWhName,
+                                'source_quantity' => $srcQtyAfter,
+                                'destination_warehouse' => $destWhName,
+                                'destination_quantity' => $destQtyAfter,
+                            ],
+                            'product' => $product->name,
+                            'sku' => $product->sku,
+                            'quantity' => $qty,
+                            'notes' => $notes
+                        ])
+                        ->log("Transfer stok produk '{$product->name}' ({$product->sku}) sebanyak {$qty} dari gudang '{$sourceWhName}' ke gudang '{$destWhName}'");
+
                 } else {
                     $whId = $request->input('warehouse_id');
                     
@@ -201,6 +244,41 @@ class StockController extends Controller
                         'notes' => $notes,
                         'created_by' => $userId
                     ]);
+
+                    // Log activity
+                    $warehouse = Warehouse::find($whId);
+                    $product = Product::find($productId);
+                    
+                    $eventMap = [
+                        'IN' => 'stock_in',
+                        'OUT' => 'stock_out',
+                        'ADJUSTMENT' => 'adjustment',
+                    ];
+                    $event = $eventMap[$type] ?? 'adjustment';
+                    
+                    $actionDesc = match($type) {
+                        'IN' => "Stok masuk produk '{$product->name}' ({$product->sku}) sebanyak {$qty} di gudang '{$warehouse->name}'",
+                        'OUT' => "Stok keluar produk '{$product->name}' ({$product->sku}) sebanyak {$qty} di gudang '{$warehouse->name}'",
+                        'ADJUSTMENT' => "Penyesuaian stok produk '{$product->name}' ({$product->sku}) di gudang '{$warehouse->name}' dari {$qtyBefore} menjadi {$qtyAfter} (selisih {$qtyChange})",
+                    };
+
+                    activity()
+                        ->useLog('inventory')
+                        ->event($event)
+                        ->withProperties([
+                            'old' => [
+                                'quantity' => $qtyBefore,
+                            ],
+                            'attributes' => [
+                                'quantity' => $qtyAfter,
+                            ],
+                            'product' => $product->name,
+                            'sku' => $product->sku,
+                            'warehouse' => $warehouse->name,
+                            'quantity_change' => $qtyChange,
+                            'notes' => $notes
+                        ])
+                        ->log($actionDesc);
                 }
             });
 

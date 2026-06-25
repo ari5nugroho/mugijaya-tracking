@@ -49,6 +49,12 @@ class NewPasswordController extends Controller
                 ])->save();
 
                 event(new PasswordReset($user));
+
+                activity()
+                    ->useLog('auth')
+                    ->performedOn($user)
+                    ->event('password_reset')
+                    ->log("Password user '{$user->name}' telah direset");
             }
         );
 
