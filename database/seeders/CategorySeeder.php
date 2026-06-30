@@ -11,33 +11,33 @@ class CategorySeeder extends Seeder
     {
         $categories = [
             [
-                'name' => 'Electronics',
-                'slug' => 'electronics',
-                'description' => 'Peralatan elektronik dan gadget canggih.',
+                'name' => 'Kaca',
+                'slug' => 'kaca',
+                'description' => 'Bahan baku kaca lembaran berbagai jenis dan ketebalan.',
                 'status' => true,
             ],
             [
-                'name' => 'Furniture',
-                'slug' => 'furniture',
-                'description' => 'Furnitur dan dekorasi kantor/rumah berkualitas.',
+                'name' => 'Aluminium',
+                'slug' => 'aluminium',
+                'description' => 'Bahan baku profil aluminium dan panel composite.',
                 'status' => true,
             ],
             [
-                'name' => 'Food & Beverage',
-                'slug' => 'food-beverage',
-                'description' => 'Makanan dan minuman siap saji serta bahan mentah.',
+                'name' => 'Aksesoris',
+                'slug' => 'aksesoris',
+                'description' => 'Aksesoris dan bahan pendukung pemasangan kaca/aluminium (engsel, roda sliding, sealant, dll).',
                 'status' => true,
             ],
             [
-                'name' => 'Apparel',
-                'slug' => 'apparel',
-                'description' => 'Pakaian, kaos, celana, dan aksesoris fashion.',
+                'name' => 'Fabrikasi Kaca',
+                'slug' => 'fabrikasi-kaca',
+                'description' => 'Kategori jenis fabrikasi/produk custom berbahan dasar kaca.',
                 'status' => true,
             ],
             [
-                'name' => 'Household',
-                'slug' => 'household',
-                'description' => 'Kebutuhan rumah tangga sehari-hari.',
+                'name' => 'Fabrikasi Aluminium',
+                'slug' => 'fabrikasi-aluminium',
+                'description' => 'Kategori jenis fabrikasi/produk custom berbahan dasar aluminium.',
                 'status' => true,
             ],
         ];

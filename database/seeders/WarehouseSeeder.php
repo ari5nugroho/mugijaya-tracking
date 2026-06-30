@@ -21,6 +21,8 @@ class WarehouseSeeder extends Seeder
                 'capacity' => 50000,
                 'capacity_used' => 38500,
                 'address' => 'Jl. Kaligawe Raya No.12, Semarang',
+                'latitude' => -6.9667,
+                'longitude' => 110.45,
                 'status' => true,
             ],
             [
@@ -30,6 +32,8 @@ class WarehouseSeeder extends Seeder
                 'capacity' => 30000,
                 'capacity_used' => 14200,
                 'address' => 'Kawasan Industri Pulogadung Blok C, Jakarta',
+                'latitude' => -6.1853,
+                'longitude' => 106.9009,
                 'status' => true,
             ],
             [
@@ -39,6 +43,8 @@ class WarehouseSeeder extends Seeder
                 'capacity' => 25000,
                 'capacity_used' => 22800,
                 'address' => 'Jl. Margomulyo No.45, Surabaya',
+                'latitude' => -7.2492,
+                'longitude' => 112.6921,
                 'status' => true,
             ],
         ];

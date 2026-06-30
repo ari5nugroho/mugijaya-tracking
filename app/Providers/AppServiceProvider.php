@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Models\StockMovement;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,5 +21,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         \Illuminate\Pagination\Paginator::useBootstrapFive();
+        StockMovement::observe(StockMovement::class);
     }
 }

@@ -26,6 +26,7 @@ class RolePermissionSeeder extends Seeder
             'warehouse.create',
             'warehouse.edit',
             'warehouse.delete',
+            'warehouse.gps.view',
 
             // Category
             'category.view',
@@ -44,6 +45,19 @@ class RolePermissionSeeder extends Seeder
             'inventory.stockin',
             'inventory.stockout',
             'inventory.adjustment',
+
+            // Order
+            'order.view',
+            'order.create',
+            'order.edit',
+            'order.delete',
+            'order.assign_driver',
+
+            // Checklist (2-layer approval)
+            'checklist.view',
+            'checklist.create.mandor',
+            'checklist.approve.mandor',
+            'checklist.approve.kepala_lapangan',
 
             // Delivery
             'delivery.view',
@@ -75,43 +89,29 @@ class RolePermissionSeeder extends Seeder
 
         // --- ADMIN: Full minus User Management & Audit ---
         $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
-        $admin->syncPermissions([
-            'dashboard.view',
-            'warehouse.view', 'warehouse.create', 'warehouse.edit', 'warehouse.delete',
-            'category.view', 'category.create', 'category.edit', 'category.delete',
-            'product.view', 'product.create', 'product.edit', 'product.delete',
-            'inventory.view', 'inventory.stockin', 'inventory.stockout', 'inventory.adjustment',
-            'delivery.view', 'delivery.create', 'delivery.approve',
-            'driver.view', 'driver.manage',
-            'gps.view',
-        ]);
+        $admin->syncPermissions(['dashboard.view', 'warehouse.view', 'warehouse.create', 'warehouse.edit', 'warehouse.delete', 'warehouse.gps.view', 'category.view', 'category.create', 'category.edit', 'category.delete', 'product.view', 'product.create', 'product.edit', 'product.delete', 'inventory.view', 'inventory.stockin', 'inventory.stockout', 'inventory.adjustment', 'order.view', 'order.create', 'order.edit', 'order.delete', 'order.assign_driver', 'checklist.view', 'delivery.view', 'delivery.create', 'delivery.approve', 'driver.view', 'driver.manage', 'gps.view']);
 
-        // --- STAFF GUDANG: Warehouse, Product, Inventory, QC & Loading ---
+        // --- STAFF GUDANG: Warehouse, Product, Inventory ---
         $staffGudang = Role::firstOrCreate(['name' => 'Staff Gudang', 'guard_name' => 'web']);
-        $staffGudang->syncPermissions([
-            'dashboard.view',
-            'warehouse.view',
-            'product.view',
-            'inventory.view', 'inventory.stockin', 'inventory.stockout', 'inventory.adjustment',
-        ]);
+        $staffGudang->syncPermissions(['dashboard.view', 'warehouse.view', 'product.view', 'inventory.view', 'inventory.stockin', 'inventory.stockout', 'inventory.adjustment']);
+
+        // --- KEPALA PRODUKSI (Pak Yudi): Monitoring lintas gudang ---
+        $kepalaProduksi = Role::firstOrCreate(['name' => 'Kepala Produksi', 'guard_name' => 'web']);
+        $kepalaProduksi->syncPermissions(['dashboard.view', 'warehouse.view', 'warehouse.gps.view', 'product.view', 'category.view', 'inventory.view', 'inventory.adjustment', 'order.view', 'checklist.view']);
+
+        // --- MANDOR: Checklist layer 1, stock movement di gudang sendiri ---
+        $mandor = Role::firstOrCreate(['name' => 'Mandor', 'guard_name' => 'web']);
+        $mandor->syncPermissions(['dashboard.view', 'warehouse.view', 'product.view', 'inventory.view', 'inventory.stockin', 'inventory.stockout', 'order.view', 'checklist.view', 'checklist.create.mandor', 'checklist.approve.mandor']);
+
+        // --- KEPALA LAPANGAN (Pak Egi): Approval layer 2, koordinasi driver ---
+        $kepalaLapangan = Role::firstOrCreate(['name' => 'Kepala Lapangan', 'guard_name' => 'web']);
+        $kepalaLapangan->syncPermissions(['dashboard.view', 'warehouse.view', 'warehouse.gps.view', 'order.view', 'order.assign_driver', 'checklist.view', 'checklist.approve.kepala_lapangan', 'delivery.view', 'delivery.approve', 'driver.view', 'driver.manage', 'gps.view']);
 
         // --- DRIVER: GPS & Delivery ---
         $driver = Role::firstOrCreate(['name' => 'Driver', 'guard_name' => 'web']);
-        $driver->syncPermissions([
-            'dashboard.view',
-            'delivery.view',
-            'gps.view',
-        ]);
+        $driver->syncPermissions(['dashboard.view', 'order.view', 'delivery.view', 'gps.view']);
 
         $this->command->info('✅ Roles dan Permissions berhasil dibuat!');
-        $this->command->table(
-            ['Role', 'Permissions'],
-            [
-                ['Owner', $owner->permissions->count() . ' permissions (full access)'],
-                ['Admin', $admin->permissions->count() . ' permissions'],
-                ['Staff Gudang', $staffGudang->permissions->count() . ' permissions'],
-                ['Driver', $driver->permissions->count() . ' permissions'],
-            ]
-        );
+        $this->command->table(['Role', 'Permissions'], [['Owner', $owner->permissions->count() . ' permissions (full access)'], ['Admin', $admin->permissions->count() . ' permissions'], ['Staff Gudang', $staffGudang->permissions->count() . ' permissions'], ['Kepala Produksi', $kepalaProduksi->permissions->count() . ' permissions'], ['Mandor', $mandor->permissions->count() . ' permissions'], ['Kepala Lapangan', $kepalaLapangan->permissions->count() . ' permissions'], ['Driver', $driver->permissions->count() . ' permissions']]);
     }
 }
