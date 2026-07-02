@@ -30,7 +30,8 @@ class RoleController extends Controller
 
         Role::create(['name' => $request->input('name'), 'guard_name' => 'web']);
 
-        return redirect()->route('roles.index')
+        return redirect()
+            ->route('roles.index')
             ->with('success', "Role '{$request->input('name')}' berhasil dibuat.");
     }
 
@@ -45,7 +46,8 @@ class RoleController extends Controller
 
         $role->update(['name' => $request->input('name')]);
 
-        return redirect()->route('roles.index')
+        return redirect()
+            ->route('roles.index')
             ->with('success', "Role berhasil diperbarui menjadi '{$role->name}'.");
     }
 
@@ -54,16 +56,18 @@ class RoleController extends Controller
      */
     public function destroy(Role $role)
     {
-        // Protect default system roles
-        $protected = ['Owner', 'Admin', 'Staff Gudang', 'Driver'];
+        // Protect default system roles (5 role inti sesuai konsep awal)
+        $protected = ['Owner', 'Kepala Produksi', 'Mandor', 'Kepala Lapangan', 'Driver'];
         if (in_array($role->name, $protected)) {
-            return redirect()->route('roles.index')
+            return redirect()
+                ->route('roles.index')
                 ->with('error', "Role sistem '{$role->name}' tidak dapat dihapus.");
         }
 
         $role->delete();
 
-        return redirect()->route('roles.index')
+        return redirect()
+            ->route('roles.index')
             ->with('success', "Role '{$role->name}' berhasil dihapus.");
     }
 }

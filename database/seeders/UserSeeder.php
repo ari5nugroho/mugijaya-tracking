@@ -25,20 +25,6 @@ class UserSeeder extends Seeder
                 'warehouse_id' => null,
             ],
             [
-                'name' => 'Budi Santoso',
-                'email' => 'admin@mugijaya.com',
-                'password' => Hash::make('password'),
-                'role' => 'Admin',
-                'warehouse_id' => null,
-            ],
-            [
-                'name' => 'Citra Dewi',
-                'email' => 'staff@mugijaya.com',
-                'password' => Hash::make('password'),
-                'role' => 'Staff Gudang',
-                'warehouse_id' => null,
-            ],
-            [
                 'name' => 'Dian Prasetyo',
                 'email' => 'driver@mugijaya.com',
                 'password' => Hash::make('password'),

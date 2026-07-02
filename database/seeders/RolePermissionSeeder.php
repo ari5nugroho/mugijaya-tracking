@@ -14,6 +14,12 @@ class RolePermissionSeeder extends Seeder
         // Reset cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
+        // Bersihkan role lama "Admin" & "Staff Gudang" jika pernah ada di DB
+        // (sisa dari eksperimen 7-role sebelum kembali ke konsep 5 role).
+        // Users yang masih terpasang di role ini otomatis lepas rolenya;
+        // pastikan re-assign manual lewat menu Manajemen User setelah seed.
+        Role::whereIn('name', ['Admin', 'Staff Gudang'])->delete();
+
         // ============================================================
         // DEFINE ALL PERMISSIONS
         // ============================================================
@@ -87,19 +93,17 @@ class RolePermissionSeeder extends Seeder
         $owner = Role::firstOrCreate(['name' => 'Owner', 'guard_name' => 'web']);
         $owner->syncPermissions(Permission::all());
 
-        // --- ADMIN: Full minus User Management & Audit ---
-        $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
-        $admin->syncPermissions(['dashboard.view', 'warehouse.view', 'warehouse.create', 'warehouse.edit', 'warehouse.delete', 'warehouse.gps.view', 'category.view', 'category.create', 'category.edit', 'category.delete', 'product.view', 'product.create', 'product.edit', 'product.delete', 'inventory.view', 'inventory.stockin', 'inventory.stockout', 'inventory.adjustment', 'order.view', 'order.create', 'order.edit', 'order.delete', 'order.assign_driver', 'checklist.view', 'delivery.view', 'delivery.create', 'delivery.approve', 'driver.view', 'driver.manage', 'gps.view']);
-
-        // --- STAFF GUDANG: Warehouse, Product, Inventory ---
-        $staffGudang = Role::firstOrCreate(['name' => 'Staff Gudang', 'guard_name' => 'web']);
-        $staffGudang->syncPermissions(['dashboard.view', 'warehouse.view', 'product.view', 'inventory.view', 'inventory.stockin', 'inventory.stockout', 'inventory.adjustment']);
-
-        // --- KEPALA PRODUKSI (Pak Yudi): Monitoring lintas gudang ---
+        // --- KEPALA PRODUKSI (Pak Yudi): Monitoring & kelola lintas gudang.
+        // Menyerap permission CRUD warehouse/category/product/order yang
+        // sebelumnya dipegang role "Admin" (role tersebut dihapus, konsep
+        // kembali ke 5 role sesuai dokumen awal).
         $kepalaProduksi = Role::firstOrCreate(['name' => 'Kepala Produksi', 'guard_name' => 'web']);
-        $kepalaProduksi->syncPermissions(['dashboard.view', 'warehouse.view', 'warehouse.gps.view', 'product.view', 'category.view', 'inventory.view', 'inventory.adjustment', 'order.view', 'checklist.view']);
+        $kepalaProduksi->syncPermissions(['dashboard.view', 'warehouse.view', 'warehouse.create', 'warehouse.edit', 'warehouse.delete', 'warehouse.gps.view', 'category.view', 'category.create', 'category.edit', 'category.delete', 'product.view', 'product.create', 'product.edit', 'product.delete', 'inventory.view', 'inventory.adjustment', 'order.view', 'order.create', 'order.edit', 'order.delete', 'checklist.view']);
 
-        // --- MANDOR: Checklist layer 1, stock movement di gudang sendiri ---
+        // --- MANDOR: Checklist layer 1 & stock movement di gudang sendiri.
+        // Menyerap permission stock in/out yang sebelumnya dipegang role
+        // "Staff Gudang" (role tersebut dihapus, digabung ke Mandor karena
+        // Mandor memang sudah terikat 1 gudang lewat warehouse_id).
         $mandor = Role::firstOrCreate(['name' => 'Mandor', 'guard_name' => 'web']);
         $mandor->syncPermissions(['dashboard.view', 'warehouse.view', 'product.view', 'inventory.view', 'inventory.stockin', 'inventory.stockout', 'order.view', 'checklist.view', 'checklist.create.mandor', 'checklist.approve.mandor']);
 
@@ -111,7 +115,7 @@ class RolePermissionSeeder extends Seeder
         $driver = Role::firstOrCreate(['name' => 'Driver', 'guard_name' => 'web']);
         $driver->syncPermissions(['dashboard.view', 'order.view', 'delivery.view', 'gps.view']);
 
-        $this->command->info('✅ Roles dan Permissions berhasil dibuat!');
-        $this->command->table(['Role', 'Permissions'], [['Owner', $owner->permissions->count() . ' permissions (full access)'], ['Admin', $admin->permissions->count() . ' permissions'], ['Staff Gudang', $staffGudang->permissions->count() . ' permissions'], ['Kepala Produksi', $kepalaProduksi->permissions->count() . ' permissions'], ['Mandor', $mandor->permissions->count() . ' permissions'], ['Kepala Lapangan', $kepalaLapangan->permissions->count() . ' permissions'], ['Driver', $driver->permissions->count() . ' permissions']]);
+        $this->command->info('✅ Roles dan Permissions berhasil dibuat! (5 role sesuai konsep awal)');
+        $this->command->table(['Role', 'Permissions'], [['Owner', $owner->permissions->count() . ' permissions (full access)'], ['Kepala Produksi', $kepalaProduksi->permissions->count() . ' permissions'], ['Mandor', $mandor->permissions->count() . ' permissions'], ['Kepala Lapangan', $kepalaLapangan->permissions->count() . ' permissions'], ['Driver', $driver->permissions->count() . ' permissions']]);
     }
 }
